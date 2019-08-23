@@ -55,7 +55,14 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     _(vm->host_stack);
     _((uint64_t)vm->serial_line_buffer);
     _(vm->regions.video_buffer);
+    // Other non-zero filed to be initialized
     vm->serial_line_iptr = 0;
+    vm->pic.slave_pic_data = 0xff;
+    vm->pic.master_pic_data = 0xff;
+    {
+        struct ring * _ring = vmcs_to_keyboard_buffer(vm);
+        _ring->ring_size = SCANCODE_BUFFER_LENGTH;
+    }
     return ERROR_OK;
 #undef _
 }
@@ -337,15 +344,16 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
     // Examine basic ept and vpid capability.
     ASSERT(vpid_and_ept_msr_eax & 0x1);
     //ASSERT(vpid_and_ept_msr_eax & (1 << 8));
-    ASSERT(vpid_and_ept_msr_eax & (1 << 14));
-    ASSERT(vpid_and_ept_msr_eax & (1 << 21));
-    ASSERT(vpid_and_ept_msr_edx & 0x1);
+    //ASSERT(vpid_and_ept_msr_eax & (1 << 14));
+    //ASSERT(vpid_and_ept_msr_eax & (1 << 21));
+    //ASSERT(vpid_and_ept_msr_edx & 0x1);
     {
         // primary process based execution control, See Table 24-6
         uint32_t pri_procbase_ctls = 0;
         pri_procbase_ctls |= 1 << 2; // enable interrupt-window exit
         pri_procbase_ctls |= 1 << 7; // Hlt causes vm exit
         pri_procbase_ctls |= 1 << 9; // INVLPG causes vm exit
+        pri_procbase_ctls |= 1 << 12; // RDTSC exiting
         pri_procbase_ctls |= 1 << 15; // CR3-load causes vm exit
         pri_procbase_ctls |= 1 << 16; // CR3-store causes vm exit
         pri_procbase_ctls |= 1 << 24; // Unconditional IO exiting

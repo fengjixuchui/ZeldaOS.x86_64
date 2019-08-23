@@ -5,7 +5,7 @@
  */
 
 // log verbosity option[LOG_TRIVIA, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR]
-#define DEFAULT_LOGGING_LEVEL LOG_TRIVIA
+#define DEFAULT_LOGGING_LEVEL LOG_DEBUG
 
 // the maximum number of processors supported
 #define MAX_NR_CPUS 64
@@ -42,3 +42,7 @@
 
 // maximum frames to dump in backtrace
 #define MAX_FRAMES_TO_DUMP 32
+
+// I find no feasible way to detect the CPU speed but to define one
+// FIXME: PLEASE ALSO SPECIFY ONE FOR THE MACHINE YOU ARE GOING TO RUN
+#define CPU_FREQUENCY 2494254000

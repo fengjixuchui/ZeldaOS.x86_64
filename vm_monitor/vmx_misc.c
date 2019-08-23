@@ -10,6 +10,8 @@
 #include <lib64/include/string.h>
 #include <vm_monitor/include/device_serial.h>
 #include <vm_monitor/include/device_8259pic.h>
+#include <vm_monitor/include/device_8253pit.h>
+#include <vm_monitor/include/device_keyboard.h>
 #define VMXON_LOCK_FLAG 0x1
 #define VMXON_ENABLE_FLAG 0x4
 #define VMX_ENABLE_FLAG (1 << 13)
@@ -55,17 +57,19 @@ vm_monitor_init(void)
         uint32_t eax;
         uint32_t edx;
         RDMSR(ecx, &eax, &edx);
-
-        // If BIOS lock the vmx, we should not go on. Go to configure BIOS to
-        // enable intel VT-x...
-        ASSERT(!(eax & VMXON_LOCK_FLAG));
-
-        if (!(eax & VMXON_ENABLE_FLAG)) {
+        
+        if (eax & VMXON_LOCK_FLAG) {
+            // The CPU has only one chance to set the VMXON_LOCK_FLAG bit on, if
+            // it fails, it may never be enabled, any write to the IA32_FEATURE_CONTROL_MSR
+            // causes #GP exception.
+            ASSERT(eax & VMXON_ENABLE_FLAG);
+        } else {
             ecx = IA32_FEATURE_CONTROL_MSR;
             eax |= VMXON_LOCK_FLAG;
             eax |= VMXON_ENABLE_FLAG;
             WRMSR(ecx, eax, edx);
         }
+
         ecx = IA32_FEATURE_CONTROL_MSR;
         RDMSR(ecx, &eax, &edx);
         ASSERT(eax & VMXON_ENABLE_FLAG);
@@ -132,4 +136,6 @@ vm_monitor_init(void)
     // initailize device controller
     vmx_device_serial_preinit();
     vmx_chipset_8259pic_preinit();
+    vmx_chipset_8253pit_preinit();
+    vmx_device_keyboard_preinit();
 }
